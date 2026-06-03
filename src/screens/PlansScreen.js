@@ -1,40 +1,51 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { colors } from '../theme';
+import { useAuth } from '../context/AuthContext';
 
 const PLANS = [
   {
     id: 'free', label: 'FREE', price: '$0', period: '/mo',
     color: colors.textMuted, badge: null,
-    features: ['DNS tracker blocking', 'Basic Ghost mode', 'Up to $0.50/mo yield', '1 persona'],
+    features: ['DNS tracker blocking', 'Basic Ghost mode', 'Up to $0.50/mo yield', '1 persona', 'Ledger history (7 days)'],
   },
   {
     id: 'pro', label: 'PRO', price: '$10', period: '/mo',
     color: colors.cyan, badge: 'MOST POPULAR',
-    features: ['Everything in Free', 'Priority yield pool', 'Up to $8/mo yield', '3 personas', 'Advanced fingerprint mask'],
+    features: ['Everything in Free', 'Priority yield pool', 'Up to $8/mo yield', '3 personas', 'Advanced fingerprint mask', 'Kill switch', '90-day ledger history'],
   },
   {
     id: 'elite', label: 'ELITE', price: '$30', period: '/mo',
     color: colors.pink, badge: 'MAX YIELD',
-    features: ['Everything in Pro', 'Elite yield tier', 'Up to $30/mo yield', 'Unlimited personas', 'Real-time payload log', 'Priority data licensing'],
+    features: ['Everything in Pro', 'Elite yield tier', 'Up to $30/mo yield', 'Unlimited personas', 'Real-time payload log', 'Priority data licensing', 'Cloud sync'],
   },
 ];
 
-const B2B = {
-  label: 'ENTERPRISE', price: '$2,000', period: '/mo',
-  founderNote: 'Founder rate — first 100 subscribers only',
-  features: [
-    'Direct API access to anonymised dataset',
-    'Custom data cohort filtering',
-    'Dedicated account manager',
-    'SLA 99.9% uptime guarantee',
-    'GDPR / APPs / CCPA data processing agreement',
-    'White-label licensing available',
-  ],
-};
-
-export default function PlansScreen() {
+export default function PlansScreen({ navigation }) {
+  const { user, isAuthenticated } = useAuth();
   const [selected, setSelected] = useState('pro');
+
+  function handleSubscribe(plan) {
+    if (!isAuthenticated || (!user && !isAuthenticated)) {
+      Alert.alert(
+        'Sign In Required',
+        'Create an account to subscribe.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => navigation.navigate('Auth') },
+        ]
+      );
+      return;
+    }
+    Alert.alert(
+      `Subscribe to ${plan.label}`,
+      `Start your ${plan.label} subscription for ${plan.price}${plan.period}?\n\nPowered by Stripe.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Subscribe', onPress: () => Alert.alert('Success', 'Subscription activated! (demo)') },
+      ]
+    );
+  }
 
   return (
     <ScrollView style={s.root} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
@@ -63,9 +74,18 @@ export default function PlansScreen() {
           {plan.features.map((f, i) => (
             <Text key={i} style={s.feature}>✓  {f}</Text>
           ))}
-          {selected === plan.id && (
+          {selected === plan.id && plan.id !== 'free' && (
+            <TouchableOpacity
+              style={[s.selectBtn, { backgroundColor: plan.color }]}
+              onPress={() => handleSubscribe(plan)}
+              activeOpacity={0.85}
+            >
+              <Text style={s.selectBtnText}>SUBSCRIBE NOW</Text>
+            </TouchableOpacity>
+          )}
+          {selected === plan.id && plan.id === 'free' && (
             <View style={[s.selectBtn, { backgroundColor: plan.color }]}>
-              <Text style={s.selectBtnText}>SELECTED</Text>
+              <Text style={s.selectBtnText}>CURRENT PLAN</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -74,18 +94,28 @@ export default function PlansScreen() {
       {/* B2B Enterprise */}
       <View style={s.b2bCard}>
         <View style={s.b2bHeader}>
-          <Text style={s.b2bLabel}>B2B {B2B.label}</Text>
+          <Text style={s.b2bLabel}>B2B ENTERPRISE</Text>
           <View style={s.priceRow}>
-            <Text style={s.b2bPrice}>{B2B.price}</Text>
-            <Text style={s.period}>{B2B.period}</Text>
+            <Text style={s.b2bPrice}>Custom</Text>
           </View>
         </View>
-        <Text style={s.founderNote}>⚡ {B2B.founderNote}</Text>
-        {B2B.features.map((f, i) => (
+        <Text style={s.founderNote}>⚡ Direct API access to anonymised domain dataset</Text>
+        {[
+          'Starter · $49/mo + GST · 1,000 domains/day',
+          'Professional · $199/mo + GST · 25,000 domains/day',
+          'Enterprise · $999/mo + GST · Unlimited domains',
+          'GDPR / APPs / CCPA data processing agreement',
+          'GST tax invoice on payment',
+          'Dedicated account manager (Enterprise)',
+        ].map((f, i) => (
           <Text key={i} style={s.feature}>◆  {f}</Text>
         ))}
-        <TouchableOpacity style={s.b2bBtn} activeOpacity={0.8}>
-          <Text style={s.b2bBtnText}>CONTACT ENTERPRISE SALES</Text>
+        <TouchableOpacity
+          style={s.b2bBtn}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('B2BPayment')}
+        >
+          <Text style={s.b2bBtnText}>START B2B PAYMENT</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -113,7 +143,7 @@ const s = StyleSheet.create({
                   borderWidth: 1, borderColor: colors.borderPink, marginBottom: 14 },
   b2bHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   b2bLabel:     { color: colors.pink, fontSize: 16, fontWeight: 'bold', letterSpacing: 3, fontFamily: 'monospace' },
-  b2bPrice:     { color: colors.pink, fontSize: 26, fontWeight: 'bold', fontFamily: 'monospace' },
+  b2bPrice:     { color: colors.pink, fontSize: 22, fontWeight: 'bold', fontFamily: 'monospace' },
   founderNote:  { color: colors.pink, fontSize: 11, marginBottom: 14, fontFamily: 'monospace' },
   b2bBtn:       { backgroundColor: colors.pink, borderRadius: 8, paddingVertical: 12,
                   alignItems: 'center', marginTop: 14 },

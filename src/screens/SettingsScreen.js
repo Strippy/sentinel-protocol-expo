@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert } from 'react-native';
 import { colors } from '../theme';
+import { useAuth } from '../context/AuthContext';
 
-export default function SettingsScreen() {
+export default function SettingsScreen({ navigation }) {
+  const { user, isGuest, isAuthenticated, logout } = useAuth();
   const [autoStart, setAutoStart]   = useState(true);
   const [notify, setNotify]         = useState(true);
   const [darkDns, setDarkDns]       = useState(false);
   const [strictMode, setStrictMode] = useState(false);
+  const [killSwitch, setKillSwitch] = useState(false);
+  const [cloudSync, setCloudSync]   = useState(false);
 
   const Row = ({ label, sub, value, onChange }) => (
     <View style={s.settingRow}>
@@ -23,25 +27,91 @@ export default function SettingsScreen() {
     </View>
   );
 
+  function handleSignOut() {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign Out', style: 'destructive', onPress: logout },
+      ]
+    );
+  }
+
   return (
     <ScrollView style={s.root} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
       <Text style={s.title}>CONFIG</Text>
-      <Text style={s.sub}>Sentinel Protocol · v1.0.0-MVP</Text>
+      <Text style={s.sub}>Sentinel Protocol · v2.0.0</Text>
 
+      {/* Account */}
+      <Text style={s.section}>ACCOUNT</Text>
+      <View style={s.card}>
+        {user ? (
+          <>
+            <View style={s.accountRow}>
+              <View style={s.avatar}>
+                <Text style={s.avatarText}>{user.displayName?.[0]?.toUpperCase() || '?'}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.settingLabel}>{user.displayName}</Text>
+                <Text style={s.settingSub}>{user.email}</Text>
+              </View>
+              <View style={[s.tierBadge, { borderColor: user.subscriptionTier === 'FREE' ? colors.textMuted : colors.cyan }]}>
+                <Text style={[s.tierText, { color: user.subscriptionTier === 'FREE' ? colors.textMuted : colors.cyan }]}>
+                  {user.subscriptionTier}
+                </Text>
+              </View>
+            </View>
+            <View style={s.divider} />
+            <TouchableOpacity style={s.actionRow} activeOpacity={0.7} onPress={handleSignOut}>
+              <Text style={[s.settingLabel, { color: '#FF6B6B' }]}>Sign Out</Text>
+              <Text style={[s.chevron, { color: '#FF6B6B' }]}>›</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity
+            style={s.actionRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Auth')}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={s.settingLabel}>
+                {isGuest ? 'Continue as Guest' : 'Sign In or Create Account'}
+              </Text>
+              <Text style={s.settingSub}>
+                {isGuest ? 'Sign in to sync your settings and unlock subscriptions' : 'Access all features and manage your subscription'}
+              </Text>
+            </View>
+            <Text style={[s.chevron, { color: colors.pink }]}>›</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* VPN & Filter */}
       <Text style={s.section}>VPN & FILTER</Text>
       <View style={s.card}>
         <Row label="Auto-Start on Boot" sub="Restart DNS filter after reboot" value={autoStart} onChange={setAutoStart} />
+        <View style={s.divider} />
+        <Row label="Kill Switch" sub="Block all internet if VPN disconnects" value={killSwitch} onChange={setKillSwitch} />
         <View style={s.divider} />
         <Row label="Strict DNS Mode" sub="Block all non-whitelisted resolvers" value={strictMode} onChange={setStrictMode} />
         <View style={s.divider} />
         <Row label="Dark Web DNS" sub="Route via privacy-preserving resolver" value={darkDns} onChange={setDarkDns} />
       </View>
 
+      {/* Notifications */}
       <Text style={s.section}>NOTIFICATIONS</Text>
       <View style={s.card}>
         <Row label="Tracker Alerts" sub="Notify when new trackers are blocked" value={notify} onChange={setNotify} />
       </View>
 
+      {/* Cloud Sync */}
+      <Text style={s.section}>SYNC</Text>
+      <View style={s.card}>
+        <Row label="Cloud Sync" sub="Sync settings and blocklist across devices" value={cloudSync} onChange={setCloudSync} />
+      </View>
+
+      {/* Data & Privacy */}
       <Text style={s.section}>DATA & PRIVACY</Text>
       <View style={s.card}>
         <TouchableOpacity style={s.actionRow} activeOpacity={0.7}
@@ -70,13 +140,27 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Download */}
+      <Text style={s.section}>DOWNLOAD</Text>
+      <View style={s.card}>
+        <TouchableOpacity style={s.actionRow} activeOpacity={0.7}
+          onPress={() => navigation.navigate('Download')}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.settingLabel}>Download Native App</Text>
+            <Text style={s.settingSub}>Android APK or iOS TestFlight</Text>
+          </View>
+          <Text style={[s.chevron, { color: colors.green }]}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* About */}
       <Text style={s.section}>ABOUT</Text>
       <View style={s.card}>
-        <View style={s.infoRow}><Text style={s.infoKey}>Version</Text><Text style={s.infoVal}>1.0.0-MVP</Text></View>
+        <View style={s.infoRow}><Text style={s.infoKey}>Version</Text><Text style={s.infoVal}>2.0.0</Text></View>
         <View style={s.divider} />
         <View style={s.infoRow}><Text style={s.infoKey}>Backend</Text><Text style={[s.infoVal, { color: colors.green }]}>● LIVE</Text></View>
         <View style={s.divider} />
-        <View style={s.infoRow}><Text style={s.infoKey}>Token</Text><Text style={s.infoVal}>SHA-256 · Keychain</Text></View>
+        <View style={s.infoRow}><Text style={s.infoKey}>Encryption</Text><Text style={s.infoVal}>SHA-256 · AES-256</Text></View>
         <View style={s.divider} />
         <View style={s.infoRow}><Text style={s.infoKey}>Contact</Text><Text style={[s.infoVal, { color: colors.pink }]}>privacy@sentinelprotocol.app</Text></View>
       </View>
@@ -97,6 +181,12 @@ const s = StyleSheet.create({
   section:      { color: colors.textMuted, fontSize: 9, letterSpacing: 4, fontFamily: 'monospace', marginBottom: 8, marginTop: 6 },
   card:         { backgroundColor: colors.panel, borderRadius: 14, borderWidth: 1,
                   borderColor: colors.border, marginBottom: 20, overflow: 'hidden' },
+  accountRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
+  avatar:       { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.pink20,
+                  borderWidth: 1, borderColor: colors.pink, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  avatarText:   { color: colors.pink, fontWeight: 'bold', fontSize: 16 },
+  tierBadge:    { borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
+  tierText:     { fontSize: 9, fontWeight: 'bold', letterSpacing: 1, fontFamily: 'monospace' },
   settingRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
   actionRow:    { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
   settingLabel: { color: colors.white, fontSize: 14 },
