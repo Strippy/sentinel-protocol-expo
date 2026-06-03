@@ -4,9 +4,11 @@
   "description": "Sentinel Protocol B2B payment & data API backend",
   "main": "src/server.js",
   "scripts": {
-    "start":   "node src/server.js",
-    "dev":     "nodemon src/server.js",
-    "test":    "jest"
+    "start":      "node src/server.js",
+    "dev":        "nodemon src/server.js",
+    "mock":       "node mock-server/server.js",
+    "mock:dev":   "nodemon mock-server/server.js",
+    "test":       "node --test test/abn.test.js test/ingest.test.js"
   },
   "engines": {
     "node": ">=18.0.0"
