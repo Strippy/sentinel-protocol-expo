@@ -4,11 +4,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import ShieldScreen  from './src/screens/ShieldScreen';
-import GhostScreen   from './src/screens/GhostScreen';
-import DataScreen    from './src/screens/DataScreen';
-import PlansScreen   from './src/screens/PlansScreen';
+import ShieldScreen   from './src/screens/ShieldScreen';
+import GhostScreen    from './src/screens/GhostScreen';
+import DataScreen     from './src/screens/DataScreen';
+import PlansScreen    from './src/screens/PlansScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import DownloadScreen from './src/screens/DownloadScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -102,7 +103,7 @@ const sp = StyleSheet.create({
 
 // ── Tab icon helper ──────────────────────────────────────────────────────────
 const TAB_ICONS = {
-  Shield: '⬡', Ghost: '👤', Data: '📡', Plans: '💎', Config: '⚙️',
+  Shield: '⬡', Ghost: '👤', Data: '📡', Plans: '💎', Download: '⬇', Config: '⚙️',
 };
 
 function TabIcon({ name, focused }) {
@@ -143,11 +144,12 @@ export default function App() {
             tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
           })}
         >
-          <Tab.Screen name="Shield"  component={ShieldScreen} />
-          <Tab.Screen name="Ghost"   component={GhostScreen} />
-          <Tab.Screen name="Data"    component={DataScreen} />
-          <Tab.Screen name="Plans"   component={PlansScreen} />
-          <Tab.Screen name="Config"  component={SettingsScreen} />
+          <Tab.Screen name="Shield"   component={ShieldScreen} />
+          <Tab.Screen name="Ghost"    component={GhostScreen} />
+          <Tab.Screen name="Data"     component={DataScreen} />
+          <Tab.Screen name="Plans"    component={PlansScreen} />
+          <Tab.Screen name="Download" component={DownloadScreen} />
+          <Tab.Screen name="Config"   component={SettingsScreen} />
         </Tab.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
