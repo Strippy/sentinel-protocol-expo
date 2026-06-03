@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sentinel Protocol",
     "slug": "sentinel-protocol",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "backgroundColor": "#040508",
     "splash": {
@@ -10,10 +10,13 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.sentinelprotocol.mvp"
+      "bundleIdentifier": "app.sentinelprotocol.ios"
     },
     "android": {
-      "package": "app.sentinelprotocol.mvp"
+      "package": "app.sentinelprotocol.android"
+    },
+    "extra": {
+      "backendUrl": "https://api.sentinelprotocol.app"
     }
   }
 }
