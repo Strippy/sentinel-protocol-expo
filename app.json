@@ -15,6 +15,11 @@
     "android": {
       "package": "app.sentinelprotocol.android"
     },
+    "web": {
+      "output": "static",
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
     "extra": {
       "backendUrl": "https://api.sentinelprotocol.app"
     }

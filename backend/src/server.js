@@ -53,8 +53,11 @@ app.use((err, req, res, next) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-    logger.info(`Sentinel B2B server running on port ${PORT} [${process.env.NODE_ENV}]`);
-});
+// Skip listen when required as a Vercel serverless module
+if (require.main === module) {
+    app.listen(PORT, () => {
+        logger.info(`Sentinel B2B server running on port ${PORT} [${process.env.NODE_ENV}]`);
+    });
+}
 
 module.exports = app;  // for testing
