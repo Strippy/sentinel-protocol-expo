@@ -32,6 +32,12 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+
+# credentials / secrets
+google-service-account.json
+*.keystore
+package-lock.json
 
 # typescript
 *.tsbuildinfo

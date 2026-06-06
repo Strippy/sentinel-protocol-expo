@@ -5,18 +5,49 @@
     "version": "2.0.0",
     "orientation": "portrait",
     "backgroundColor": "#040508",
+    "userInterfaceStyle": "dark",
     "splash": {
-      "backgroundColor": "#040508"
+      "backgroundColor": "#040508",
+      "resizeMode": "contain"
     },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.sentinelprotocol.ios"
+      "bundleIdentifier": "app.sentinelprotocol.ios",
+      "buildNumber": "1"
     },
     "android": {
-      "package": "app.sentinelprotocol.android"
+      "package": "app.sentinelprotocol.android",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#040508"
+      }
     },
+    "web": {
+      "output": "static",
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 24,
+            "buildToolsVersion": "35.0.0"
+          },
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ]
+    ],
     "extra": {
-      "backendUrl": "https://api.sentinelprotocol.app"
+      "backendUrl": "https://api.sentinelprotocol.app",
+      "eas": {
+        "projectId": "sentinel-protocol"
+      }
     }
   }
 }
