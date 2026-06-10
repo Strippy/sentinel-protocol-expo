@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert } from 'react-native';
 import { colors } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { getHealth } from '../services/api';
 
 export default function SettingsScreen({ navigation }) {
   const { user, isGuest, isAuthenticated, logout } = useAuth();
@@ -11,6 +12,10 @@ export default function SettingsScreen({ navigation }) {
   const [strictMode, setStrictMode] = useState(false);
   const [killSwitch, setKillSwitch] = useState(false);
   const [cloudSync, setCloudSync]   = useState(false);
+  const [backendLive, setBackendLive] = useState(null);
+  useEffect(() => {
+    getHealth().then(() => setBackendLive(true)).catch(() => setBackendLive(false));
+  }, []);
 
   const Row = ({ label, sub, value, onChange }) => (
     <View style={s.settingRow}>
@@ -158,7 +163,14 @@ export default function SettingsScreen({ navigation }) {
       <View style={s.card}>
         <View style={s.infoRow}><Text style={s.infoKey}>Version</Text><Text style={s.infoVal}>2.0.0</Text></View>
         <View style={s.divider} />
-        <View style={s.infoRow}><Text style={s.infoKey}>Backend</Text><Text style={[s.infoVal, { color: colors.green }]}>● LIVE</Text></View>
+        <View style={s.infoRow}>
+          <Text style={s.infoKey}>Backend</Text>
+          <Text style={[s.infoVal, {
+            color: backendLive === null ? colors.textMuted : backendLive ? colors.green : '#FF6B6B',
+          }]}>
+            {backendLive === null ? '● CHECKING' : backendLive ? '● LIVE' : '● OFFLINE'}
+          </Text>
+        </View>
         <View style={s.divider} />
         <View style={s.infoRow}><Text style={s.infoKey}>Encryption</Text><Text style={s.infoVal}>SHA-256 · AES-256</Text></View>
         <View style={s.divider} />

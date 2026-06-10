@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking } from 'react-native';
 import { colors } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { createCheckout } from '../services/api';
 
 const PLANS = [
   {
@@ -24,9 +25,10 @@ const PLANS = [
 export default function PlansScreen({ navigation }) {
   const { user, isAuthenticated } = useAuth();
   const [selected, setSelected] = useState('pro');
+  const [checking, setChecking] = useState(null);
 
-  function handleSubscribe(plan) {
-    if (!isAuthenticated || (!user && !isAuthenticated)) {
+  async function handleSubscribe(plan) {
+    if (!isAuthenticated) {
       Alert.alert(
         'Sign In Required',
         'Create an account to subscribe.',
@@ -37,14 +39,19 @@ export default function PlansScreen({ navigation }) {
       );
       return;
     }
-    Alert.alert(
-      `Subscribe to ${plan.label}`,
-      `Start your ${plan.label} subscription for ${plan.price}${plan.period}?\n\nPowered by Stripe.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Subscribe', onPress: () => Alert.alert('Success', 'Subscription activated! (demo)') },
-      ]
-    );
+    setChecking(plan.id);
+    try {
+      const { url } = await createCheckout(plan.id, user?.email);
+      if (typeof window !== 'undefined') {
+        window.location.href = url;
+      } else {
+        await Linking.openURL(url);
+      }
+    } catch (e) {
+      Alert.alert('Checkout Error', e.message || 'Could not start checkout. Please try again.');
+    } finally {
+      setChecking(null);
+    }
   }
 
   return (
@@ -80,7 +87,9 @@ export default function PlansScreen({ navigation }) {
               onPress={() => handleSubscribe(plan)}
               activeOpacity={0.85}
             >
-              <Text style={s.selectBtnText}>SUBSCRIBE NOW</Text>
+              {checking === plan.id
+                ? <ActivityIndicator size="small" color={colors.bg} />
+                : <Text style={s.selectBtnText}>SUBSCRIBE NOW</Text>}
             </TouchableOpacity>
           )}
           {selected === plan.id && plan.id === 'free' && (

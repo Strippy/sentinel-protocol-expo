@@ -15,6 +15,10 @@ const IOS_APPSTORE_URL   = 'https://apps.apple.com/app/sentinel-protocol';
 async function openLink(url, setLoading) {
   try {
     setLoading(true);
+    if (Platform.OS === 'web') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
     const supported = await Linking.canOpenURL(url);
     if (supported) {
       await Linking.openURL(url);

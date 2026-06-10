@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { getLiveStats } from '../services/api';
 
 const VpnContext = createContext(null);
 
@@ -42,6 +43,8 @@ export function VpnProvider({ children }) {
   const [uptime, setUptime]           = useState(0);
   const [recentEvents, setRecentEvents] = useState([]);
   const [heatmap, setHeatmap]         = useState([]);
+  const [serverConnected, setServerConnected] = useState(false);
+  const [serverStats, setServerStats]         = useState(null);
 
   const uptimeRef  = useRef(null);
   const eventRef   = useRef(null);
@@ -87,12 +90,24 @@ export function VpnProvider({ children }) {
     };
   }, [vpnActive, yieldOn]);
 
+  useEffect(() => {
+    function poll() {
+      getLiveStats()
+        .then(data => { setServerConnected(true); setServerStats(data); })
+        .catch(() => setServerConnected(false));
+    }
+    poll();
+    const id = setInterval(poll, 30000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <VpnContext.Provider value={{
       vpnActive, yieldOn, trackers, blocked, yieldAmt,
       uptime, recentEvents, heatmap,
       toggleVpn,
       setYieldOn,
+      serverConnected, serverStats,
     }}>
       {children}
     </VpnContext.Provider>
