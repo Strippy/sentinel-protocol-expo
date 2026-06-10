@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npx expo export --platform web",
+  "outputDirectory": "dist",
+  "installCommand": "npm install --legacy-peer-deps && npm install --prefix backend",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/server" }
+  ],
+  "functions": {
+    "api/server.js": {
+      "memory": 512,
+      "maxDuration": 15
+    }
+  }
+}
