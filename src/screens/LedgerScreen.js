@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TextInput,
-  TouchableOpacity, ScrollView,
+  TouchableOpacity, ScrollView, Platform,
 } from 'react-native';
 import { colors } from '../theme';
 import { useVpn } from '../context/VpnContext';
@@ -149,7 +149,7 @@ export default function LedgerScreen() {
 const s = StyleSheet.create({
   root:         { flex: 1, backgroundColor: colors.bg },
   header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-                  paddingHorizontal: 20, paddingTop: 60, paddingBottom: 14 },
+                  paddingHorizontal: 20, paddingTop: Platform.OS === 'web' ? 20 : 60, paddingBottom: 14 },
   title:        { color: colors.white, fontSize: 22, fontWeight: 'bold', letterSpacing: 4, fontFamily: 'monospace' },
   vpnStatus:    { fontSize: 11, letterSpacing: 2, fontFamily: 'monospace' },
 
@@ -157,8 +157,8 @@ const s = StyleSheet.create({
                   backgroundColor: colors.panel, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
   stat:         { flex: 1, paddingVertical: 12, alignItems: 'center' },
   statDivider:  { borderLeftWidth: 1, borderLeftColor: colors.border },
-  statNum:      { color: colors.white, fontSize: 20, fontWeight: 'bold', fontFamily: 'monospace' },
-  statLabel:    { color: colors.textMuted, fontSize: 8, letterSpacing: 1,
+  statNum:      { color: colors.white, fontSize: 18, fontWeight: 'bold', fontFamily: 'monospace' },
+  statLabel:    { color: colors.textMuted, fontSize: 10, letterSpacing: 1,
                   fontFamily: 'monospace', marginTop: 2 },
 
   searchWrap:   { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20,
@@ -172,7 +172,7 @@ const s = StyleSheet.create({
   chip:         { borderRadius: 20, borderWidth: 1, borderColor: colors.border,
                   paddingHorizontal: 12, paddingVertical: 5 },
   chipActive:   { borderColor: colors.pink, backgroundColor: colors.pink10 },
-  chipText:     { color: colors.textMuted, fontSize: 9, letterSpacing: 1, fontFamily: 'monospace' },
+  chipText:     { color: colors.textMuted, fontSize: 10, letterSpacing: 1, fontFamily: 'monospace' },
   chipTextActive:{ color: colors.pink },
   chipSep:      { width: 1, height: 20, backgroundColor: colors.border, marginHorizontal: 4 },
 

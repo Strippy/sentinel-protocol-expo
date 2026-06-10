@@ -1,38 +1,41 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { Platform } from 'react-native';
 import { getLiveStats } from '../services/api';
+import { pickSieveDomain, BLOCKLIST_COUNT } from '../services/sieve';
 
 const VpnContext = createContext(null);
 
-const SAMPLE_DOMAINS = [
-  { domain: 'doubleclick.net',    riskLabel: 'HIGH',   blocked: true,  packetSizeBytes: 512 },
-  { domain: 'googletagmanager.com', riskLabel: 'HIGH', blocked: true,  packetSizeBytes: 1024 },
-  { domain: 'facebook.com',       riskLabel: 'HIGH',   blocked: true,  packetSizeBytes: 768 },
-  { domain: 'googlesyndication.com', riskLabel: 'HIGH', blocked: true, packetSizeBytes: 2048 },
-  { domain: 'analytics.google.com', riskLabel: 'MEDIUM', blocked: false, packetSizeBytes: 256 },
-  { domain: 'cdn.amplitude.com',  riskLabel: 'MEDIUM', blocked: true,  packetSizeBytes: 384 },
-  { domain: 'api.segment.io',     riskLabel: 'MEDIUM', blocked: false, packetSizeBytes: 640 },
-  { domain: 'graph.facebook.com', riskLabel: 'HIGH',   blocked: true,  packetSizeBytes: 896 },
-  { domain: 'connect.facebook.net', riskLabel: 'HIGH', blocked: true,  packetSizeBytes: 1536 },
-  { domain: 'mixpanel.com',       riskLabel: 'MEDIUM', blocked: false, packetSizeBytes: 320 },
-  { domain: 'cloudfront.net',     riskLabel: 'LOW',    blocked: false, packetSizeBytes: 4096 },
-  { domain: 'app.adjust.com',     riskLabel: 'HIGH',   blocked: true,  packetSizeBytes: 448 },
-  { domain: 'branch.io',          riskLabel: 'MEDIUM', blocked: true,  packetSizeBytes: 512 },
-  { domain: 'firebase.io',        riskLabel: 'LOW',    blocked: false, packetSizeBytes: 768 },
-  { domain: 'moatads.com',        riskLabel: 'HIGH',   blocked: true,  packetSizeBytes: 256 },
-];
+// ── Service Worker helpers (web only) ─────────────────────────────────────────
 
-function generateEvent() {
-  const sample = SAMPLE_DOMAINS[Math.floor(Math.random() * SAMPLE_DOMAINS.length)];
-  return {
-    id:              Date.now() + Math.random(),
-    domain:          sample.domain,
-    riskLabel:       sample.riskLabel,
-    blocked:         sample.blocked,
-    packetSizeBytes: sample.packetSizeBytes + Math.floor(Math.random() * 128),
-    hourBucket:      new Date().getHours(),
-    timestamp:       Date.now(),
-  };
+function swSend(msg) {
+  if (Platform.OS !== 'web' || !navigator?.serviceWorker?.controller) return;
+  navigator.serviceWorker.controller.postMessage(msg);
 }
+
+function listenSW(onEvent) {
+  if (Platform.OS !== 'web' || !navigator?.serviceWorker) return () => {};
+  const handler = (e) => { if (e.data?.type === 'SENTINEL_BLOCKED') onEvent(e.data); };
+  navigator.serviceWorker.addEventListener('message', handler);
+  return () => navigator.serviceWorker.removeEventListener('message', handler);
+}
+
+// ── Batch ingest queue ────────────────────────────────────────────────────────
+
+const ingestQueue = [];
+async function flushIngest() {
+  if (!ingestQueue.length) return;
+  const batch = ingestQueue.splice(0, ingestQueue.length);
+  try {
+    const base = Platform.OS === 'web' ? '/api' : (__DEV__ ? 'http://localhost:3000/api' : 'https://sentinel-protocol-expo.vercel.app/api');
+    await fetch(`${base}/ingest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ events: batch, sessionId: batch[0]?.sessionId }),
+    });
+  } catch {}
+}
+
+// ── Provider ──────────────────────────────────────────────────────────────────
 
 export function VpnProvider({ children }) {
   const [vpnActive, setVpnActive]     = useState(false);
@@ -44,56 +47,108 @@ export function VpnProvider({ children }) {
   const [recentEvents, setRecentEvents] = useState([]);
   const [heatmap, setHeatmap]         = useState([]);
   const [serverConnected, setServerConnected] = useState(false);
-  const [serverStats, setServerStats]         = useState(null);
+  const [serverStats, setServerStats] = useState(null);
+  const [swReady, setSwReady]         = useState(false);
+  const [rulesCount]                  = useState(BLOCKLIST_COUNT);
 
-  const uptimeRef  = useRef(null);
-  const eventRef   = useRef(null);
+  const uptimeRef = useRef(null);
+  const eventRef  = useRef(null);
+  const flushRef  = useRef(null);
+  const sessionId = useRef(`web-${Date.now()}`);
 
   const toggleVpn = useCallback(() => setVpnActive(v => !v), []);
 
+  // ── SW ready check ───────────────────────────────────────────────────────
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const check = () => {
+      if (navigator?.serviceWorker?.controller) setSwReady(true);
+    };
+    check();
+    navigator?.serviceWorker?.addEventListener('controllerchange', check);
+    return () => navigator?.serviceWorker?.removeEventListener('controllerchange', check);
+  }, []);
+
+  // ── SW → app message channel ─────────────────────────────────────────────
+  useEffect(() => {
+    const addEvent = (data) => {
+      const evt = {
+        id:              Date.now() + Math.random(),
+        domain:          data.domain,
+        riskLabel:       data.riskLabel || 'MEDIUM',
+        blocked:         true,
+        packetSizeBytes: Math.floor(Math.random() * 1500) + 200,
+        hourBucket:      new Date().getHours(),
+        timestamp:       data.ts || Date.now(),
+        source:          'sw',
+      };
+      setTrackers(t => t + 1);
+      setBlocked(b => b + 1);
+      if (yieldOn) setYieldAmt(y => parseFloat((y + 0.002).toFixed(3)));
+      setRecentEvents(prev => [evt, ...prev].slice(0, 200));
+      ingestQueue.push({ ...evt, sessionId: sessionId.current });
+    };
+    return listenSW(addEvent);
+  }, [yieldOn]);
+
+  // ── VPN active: tick events + SW state ───────────────────────────────────
   useEffect(() => {
     if (vpnActive) {
+      swSend('SIEVE_ON');
+
       uptimeRef.current = setInterval(() => setUptime(t => t + 1), 1000);
 
       eventRef.current = setInterval(() => {
-        const event = generateEvent();
+        const sample = pickSieveDomain();
+        const evt = {
+          id:              Date.now() + Math.random(),
+          domain:          sample.domain,
+          riskLabel:       sample.riskLabel,
+          blocked:         sample.blocked,
+          packetSizeBytes: Math.floor(Math.random() * 1500) + 200,
+          hourBucket:      new Date().getHours(),
+          timestamp:       Date.now(),
+          source:          'sieve',
+        };
         setTrackers(t => t + 1);
-        if (event.blocked) setBlocked(b => b + 1);
-        if (yieldOn && event.blocked) setYieldAmt(y => parseFloat((y + 0.001).toFixed(3)));
+        if (evt.blocked) setBlocked(b => b + 1);
+        if (yieldOn && evt.blocked) setYieldAmt(y => parseFloat((y + 0.001).toFixed(3)));
+        setRecentEvents(prev => [evt, ...prev].slice(0, 200));
 
-        setRecentEvents(prev => {
-          const next = [event, ...prev];
-          return next.slice(0, 200);
-        });
-
-        // Update heatmap intensity
         const hour = new Date().getHours();
-        const day  = (new Date().getDay() + 6) % 7; // Mon=0
+        const day  = (new Date().getDay() + 6) % 7;
         setHeatmap(prev => {
           const idx = prev.findIndex(c => c.day === day && c.hour === hour);
-          if (idx === -1) {
-            return [...prev, { day, hour, intensity: 0.1 }];
-          }
-          const updated = [...prev];
-          updated[idx] = { ...updated[idx], intensity: Math.min(1, updated[idx].intensity + 0.05) };
-          return updated;
+          if (idx === -1) return [...prev, { day, hour, intensity: 0.1 }];
+          const u = [...prev];
+          u[idx] = { ...u[idx], intensity: Math.min(1, u[idx].intensity + 0.05) };
+          return u;
         });
+        ingestQueue.push({ ...evt, sessionId: sessionId.current });
       }, 2200);
+
+      flushRef.current = setInterval(flushIngest, 5000);
     } else {
+      swSend('SIEVE_OFF');
       clearInterval(uptimeRef.current);
       clearInterval(eventRef.current);
+      clearInterval(flushRef.current);
+      flushIngest();
       setUptime(0);
     }
     return () => {
+      swSend('SIEVE_OFF');
       clearInterval(uptimeRef.current);
       clearInterval(eventRef.current);
+      clearInterval(flushRef.current);
     };
   }, [vpnActive, yieldOn]);
 
+  // ── Server stats polling ─────────────────────────────────────────────────
   useEffect(() => {
     function poll() {
       getLiveStats()
-        .then(data => { setServerConnected(true); setServerStats(data); })
+        .then(d => { setServerConnected(true); setServerStats(d); })
         .catch(() => setServerConnected(false));
     }
     poll();
@@ -105,9 +160,8 @@ export function VpnProvider({ children }) {
     <VpnContext.Provider value={{
       vpnActive, yieldOn, trackers, blocked, yieldAmt,
       uptime, recentEvents, heatmap,
-      toggleVpn,
-      setYieldOn,
-      serverConnected, serverStats,
+      serverConnected, serverStats, swReady, rulesCount,
+      toggleVpn, setYieldOn,
     }}>
       {children}
     </VpnContext.Provider>

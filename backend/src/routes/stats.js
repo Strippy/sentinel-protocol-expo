@@ -1,16 +1,15 @@
 'use strict';
-const express = require('express');
-const router  = express.Router();
+const express    = require('express');
+const statsStore = require('../services/statsStore');
+const router     = express.Router();
 
 router.get('/', (req, res) => {
   res.json({
-    status:        'live',
-    ts:            new Date().toISOString(),
-    nodeVersion:   process.version,
-    env:           process.env.NODE_ENV || 'production',
-    totalBlocked:  0,
-    totalSessions: 0,
-    topDomains:    [],
+    status:      'live',
+    ts:          new Date().toISOString(),
+    nodeVersion: process.version,
+    env:         process.env.NODE_ENV || 'production',
+    ...statsStore.snapshot(),
   });
 });
 

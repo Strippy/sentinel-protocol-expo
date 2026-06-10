@@ -11,6 +11,7 @@ const webhookRoutes    = require('./routes/webhook');
 const invoiceRoutes    = require('./routes/invoice');
 const subscribeRoutes  = require('./routes/subscribe');
 const statsRoutes      = require('./routes/stats');
+const ingestRoutes     = require('./routes/ingest');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -45,6 +46,7 @@ const adminRoutes = require('./routes/admin');
 app.use('/api/admin',     adminRoutes);
 app.use('/api/subscribe', subscribeRoutes);
 app.use('/api/stats',     statsRoutes);
+app.use('/api/ingest',   ingestRoutes);
 
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {

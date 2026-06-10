@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, ActivityIndicator
+  TouchableOpacity, ActivityIndicator, Platform,
 } from 'react-native';
 import { colors } from '../theme';
 
@@ -194,7 +194,7 @@ export default function DataScreen() {
 
 const s = StyleSheet.create({
   root:           { flex: 1, backgroundColor: colors.bg },
-  content:        { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 40 },
+  content:        { paddingHorizontal: 20, paddingTop: Platform.OS === 'web' ? 20 : 60, paddingBottom: 40 },
   title:          { color: colors.white, fontSize: 22, fontWeight: 'bold', letterSpacing: 4, fontFamily: 'monospace' },
   sub:            { color: colors.textMuted, fontSize: 12, marginBottom: 12, marginTop: 4 },
   tierPill:       { backgroundColor: colors.panel, borderRadius: 20, borderWidth: 1,

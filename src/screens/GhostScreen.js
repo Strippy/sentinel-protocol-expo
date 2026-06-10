@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Switch, ScrollView } from 'react-native';
 import { colors } from '../theme';
 
 const PERSONAS = [
@@ -35,7 +35,7 @@ export default function GhostScreen() {
   const glitchX = glitchAnim.interpolate({ inputRange: [-1, 1], outputRange: [-4, 4] });
 
   return (
-    <View style={s.root}>
+    <ScrollView style={s.root} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
       <Text style={s.title}>GHOST MODE</Text>
       <Text style={s.sub}>Identity masking & persona engine</Text>
 
@@ -100,12 +100,13 @@ export default function GhostScreen() {
           />
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  root:             { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 20, paddingTop: 60 },
+  root:             { flex: 1, backgroundColor: colors.bg },
+  content:          { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 30 },
   title:            { color: colors.white, fontSize: 22, fontWeight: 'bold', letterSpacing: 4, fontFamily: 'monospace' },
   sub:              { color: colors.textMuted, fontSize: 12, marginBottom: 24, marginTop: 4 },
   avatarWrap:       { alignItems: 'center', marginBottom: 28 },

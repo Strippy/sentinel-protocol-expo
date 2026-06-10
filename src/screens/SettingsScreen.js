@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Platform } from 'react-native';
 import { colors } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { getHealth } from '../services/api';
@@ -187,7 +187,7 @@ export default function SettingsScreen({ navigation }) {
 
 const s = StyleSheet.create({
   root:         { flex: 1, backgroundColor: colors.bg },
-  content:      { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 48 },
+  content:      { paddingHorizontal: 20, paddingTop: Platform.OS === 'web' ? 20 : 60, paddingBottom: 48 },
   title:        { color: colors.white, fontSize: 22, fontWeight: 'bold', letterSpacing: 4, fontFamily: 'monospace' },
   sub:          { color: colors.textMuted, fontSize: 12, marginBottom: 28, marginTop: 4 },
   section:      { color: colors.textMuted, fontSize: 9, letterSpacing: 4, fontFamily: 'monospace', marginBottom: 8, marginTop: 6 },

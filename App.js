@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, Animated, StatusBar, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -129,12 +129,13 @@ function MainTabs() {
           backgroundColor: PANEL,
           borderTopColor:  'rgba(255,0,127,0.2)',
           borderTopWidth:  1,
-          height:          70,
-          paddingBottom:   10,
+          height:          Platform.OS === 'web' ? 64 : 70,
+          paddingBottom:   Platform.OS === 'web' ? 8 : 12,
+          paddingTop:      4,
         },
         tabBarActiveTintColor:   PINK,
         tabBarInactiveTintColor: MUTED,
-        tabBarLabelStyle: { fontSize: 9, letterSpacing: 2, fontFamily: 'monospace', marginTop: 2 },
+        tabBarLabelStyle: { fontSize: 10, letterSpacing: 2, fontFamily: 'monospace', marginTop: 0 },
         tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
       })}
     >

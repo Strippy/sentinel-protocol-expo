@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking, Platform } from 'react-native';
 import { colors } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { createCheckout } from '../services/api';
@@ -133,7 +133,7 @@ export default function PlansScreen({ navigation }) {
 
 const s = StyleSheet.create({
   root:         { flex: 1, backgroundColor: colors.bg },
-  content:      { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 40 },
+  content:      { paddingHorizontal: 20, paddingTop: Platform.OS === 'web' ? 20 : 60, paddingBottom: 40 },
   title:        { color: colors.white, fontSize: 22, fontWeight: 'bold', letterSpacing: 4, fontFamily: 'monospace' },
   sub:          { color: colors.textMuted, fontSize: 12, marginBottom: 24, marginTop: 4 },
   planCard:     { backgroundColor: colors.panel, borderRadius: 14, padding: 18,

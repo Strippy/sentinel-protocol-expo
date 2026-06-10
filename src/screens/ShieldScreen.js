@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  Animated, ScrollView, Switch,
+  Animated, ScrollView, Switch, Dimensions, Platform,
 } from 'react-native';
 import { colors } from '../theme';
 import { useVpn } from '../context/VpnContext';
@@ -28,9 +28,13 @@ function LiveRow({ event }) {
 }
 
 export default function ShieldScreen() {
+  const SCREEN_W = Dimensions.get('window').width;
+  const ORB_SIZE = Math.min(220, SCREEN_W - 80);
+
   const {
     vpnActive, yieldOn, trackers, blocked, yieldAmt,
     uptime, recentEvents, toggleVpn, setYieldOn,
+    rulesCount = 47, swReady = false, serverConnected,
   } = useVpn();
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -70,18 +74,18 @@ export default function ShieldScreen() {
       </View>
 
       {/* Shield orb */}
-      <View style={s.shieldWrap}>
-        <Animated.View style={[s.glowRing3, { opacity: glowOpacity }]} />
-        <Animated.View style={[s.glowRing2, { opacity: glowOpacity }]} />
-        <Animated.View style={[s.glowRing1, { opacity: glowOpacity }]} />
+      <View style={[s.shieldWrap, { width: ORB_SIZE + 40, height: ORB_SIZE + 40 }]}>
+        <Animated.View style={[s.glowRing3, { opacity: glowOpacity, width: ORB_SIZE + 40, height: ORB_SIZE + 40, borderRadius: (ORB_SIZE + 40) / 2 }]} />
+        <Animated.View style={[s.glowRing2, { opacity: glowOpacity, width: ORB_SIZE, height: ORB_SIZE, borderRadius: ORB_SIZE / 2 }]} />
+        <Animated.View style={[s.glowRing1, { opacity: glowOpacity, width: ORB_SIZE - 40, height: ORB_SIZE - 40, borderRadius: (ORB_SIZE - 40) / 2 }]} />
 
         <TouchableOpacity activeOpacity={0.85} onPress={toggleVpn}>
           <Animated.View style={[
             s.shieldBtn,
-            { transform: [{ scale: pulseAnim }] },
+            { width: ORB_SIZE - 80, height: ORB_SIZE - 80, borderRadius: (ORB_SIZE - 80) / 2, transform: [{ scale: pulseAnim }] },
             vpnActive && s.shieldBtnActive,
           ]}>
-            <Text style={[s.shieldIcon, vpnActive && { color: colors.pink }]}>⬡</Text>
+            <Text style={[s.shieldIcon, { fontSize: Math.max(32, (ORB_SIZE - 80) * 0.32) }, vpnActive && { color: colors.pink }]}>⬡</Text>
             <Text style={[s.shieldLabel, vpnActive && { color: colors.pink }]}>
               {vpnActive ? 'TAP TO DEACTIVATE' : 'TAP TO ACTIVATE'}
             </Text>
@@ -134,12 +138,25 @@ export default function ShieldScreen() {
         <Text style={s.panelMeta}>DNS FILTER — SESSION STATS</Text>
         <View style={s.rowBetween}>
           <Text style={s.panelMeta}>ACTIVE RULES</Text>
-          <Text style={[s.panelTitle, { color: colors.white }]}>47 domains</Text>
+          <Text style={[s.panelTitle, { color: colors.white }]}>{rulesCount} domains</Text>
         </View>
         <View style={s.rowBetween}>
           <Text style={s.panelMeta}>SESSION UPTIME</Text>
           <Text style={[s.panelTitle, { color: colors.white, fontFamily: 'monospace', fontSize: 14 }]}>
             {formatUptime(uptime)}
+          </Text>
+        </View>
+        <View style={s.divider} />
+        <View style={s.rowBetween}>
+          <Text style={s.panelMeta}>SIEVE</Text>
+          <Text style={[s.panelTitle, { fontSize: 12, color: swReady ? colors.green : colors.textMuted }]}>
+            {swReady ? '● SW ACTIVE' : '● SIMULATED'}
+          </Text>
+        </View>
+        <View style={s.rowBetween}>
+          <Text style={s.panelMeta}>SERVER</Text>
+          <Text style={[s.panelTitle, { fontSize: 12, color: serverConnected ? colors.cyan : colors.textMuted }]}>
+            {serverConnected ? '● CONNECTED' : '● OFFLINE'}
           </Text>
         </View>
       </View>
@@ -165,7 +182,7 @@ export default function ShieldScreen() {
 
 const s = StyleSheet.create({
   root:           { flex: 1, backgroundColor: colors.bg },
-  content:        { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 40, alignItems: 'center' },
+  content:        { paddingHorizontal: 20, paddingTop: Platform.OS === 'web' ? 20 : 60, paddingBottom: 40, alignItems: 'center' },
   wordmark:       { color: colors.white, fontSize: 30, fontWeight: 'bold', letterSpacing: 5, fontFamily: 'monospace' },
   sub:            { color: colors.pink, fontSize: 11, letterSpacing: 6, marginBottom: 14 },
   chip:           { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.panel,
@@ -173,33 +190,34 @@ const s = StyleSheet.create({
                     borderWidth: 1, borderColor: colors.border },
   dot:            { width: 7, height: 7, borderRadius: 4, marginRight: 7 },
   chipText:       { fontSize: 11, letterSpacing: 2, fontFamily: 'monospace' },
-  shieldWrap:     { alignItems: 'center', justifyContent: 'center', width: 260, height: 260, marginBottom: 32 },
-  glowRing3:      { position:'absolute', width: 260, height: 260, borderRadius: 130,
+  shieldWrap:     { alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
+  glowRing3:      { position:'absolute',
                     backgroundColor: 'rgba(255,0,127,0.04)', borderWidth: 1, borderColor: 'rgba(255,0,127,0.1)' },
-  glowRing2:      { position:'absolute', width: 210, height: 210, borderRadius: 105,
+  glowRing2:      { position:'absolute',
                     backgroundColor: 'rgba(255,0,127,0.06)', borderWidth: 1, borderColor: 'rgba(255,0,127,0.2)' },
-  glowRing1:      { position:'absolute', width: 165, height: 165, borderRadius: 83,
+  glowRing1:      { position:'absolute',
                     backgroundColor: 'rgba(255,0,127,0.08)', borderWidth: 1, borderColor: 'rgba(255,0,127,0.35)' },
-  shieldBtn:      { width: 140, height: 140, borderRadius: 70, backgroundColor: '#0D0010',
+  shieldBtn:      { backgroundColor: '#0D0010',
                     borderWidth: 2, borderColor: colors.textMuted,
                     alignItems: 'center', justifyContent: 'center' },
   shieldBtnActive:{ borderColor: colors.pink, backgroundColor: '#1A0015' },
-  shieldIcon:     { fontSize: 44, color: colors.textMuted, marginBottom: 4 },
+  shieldIcon:     { color: colors.textMuted, marginBottom: 4 },
   shieldLabel:    { fontSize: 8, letterSpacing: 2, color: colors.textMuted, fontFamily: 'monospace' },
   statsRow:       { flexDirection: 'row', width: '100%', marginBottom: 14 },
   statCard:       { flex: 1, backgroundColor: colors.panel, borderRadius: 12, padding: 14,
                     alignItems: 'center', marginHorizontal: 4,
                     borderWidth: 1, borderColor: colors.border },
   statCardPink:   { borderColor: colors.borderPink },
-  statNum:        { color: colors.white, fontSize: 26, fontWeight: 'bold', fontFamily: 'monospace' },
-  statLabel:      { color: colors.textMuted, fontSize: 8, letterSpacing: 2, marginTop: 4, fontFamily: 'monospace' },
+  statNum:        { color: colors.white, fontSize: 22, fontWeight: 'bold', fontFamily: 'monospace' },
+  statLabel:      { color: colors.textMuted, fontSize: 10, letterSpacing: 2, marginTop: 4, fontFamily: 'monospace' },
   statBar:        { width: 28, height: 2, backgroundColor: colors.border, marginTop: 8, borderRadius: 1 },
   panel:          { width: '100%', backgroundColor: colors.panel, borderRadius: 12, padding: 18,
                     marginBottom: 14, borderWidth: 1, borderColor: colors.border },
   panelRow:       { flexDirection: 'row', alignItems: 'center' },
   panelTitle:     { color: colors.white, fontSize: 15, fontWeight: '600' },
   panelSub:       { color: colors.textMuted, fontSize: 12, marginTop: 3 },
-  panelMeta:      { color: colors.textMuted, fontSize: 9, letterSpacing: 2, fontFamily: 'monospace', marginBottom: 8 },
+  panelMeta:      { color: colors.textMuted, fontSize: 10, letterSpacing: 2, fontFamily: 'monospace', marginBottom: 8 },
+  divider:        { height: 1, backgroundColor: colors.border, marginVertical: 6 },
   rowBetween:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
   yieldActive:    { color: colors.pink, fontSize: 11, marginTop: 10, fontFamily: 'monospace' },
   liveRow:        { flexDirection: 'row', alignItems: 'center', paddingVertical: 5,
